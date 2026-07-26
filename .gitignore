@@ -1,2 +1,4 @@
 nexshell-release.jks.b64
 nexshell-release.jks.old
+build/
+nexshell-release.jks
