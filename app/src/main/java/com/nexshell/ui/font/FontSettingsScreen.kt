@@ -16,7 +16,7 @@ import com.nexshell.core.Workspace
 import com.nexshell.core.WorkspaceProperties
 import com.nexshell.core.WorkspaceRepository
 import com.nexshell.font.FontCatalog
-import com.nexshell.font.FontOption
+import com.nexshell.font.FontFamilyOption
 import com.nexshell.font.FontSource
 import java.io.File
 
@@ -91,16 +91,24 @@ fun FontSettingsScreen(workspace: Workspace, repository: WorkspaceRepository) {
 }
 
 @Composable
-private fun FontPreview(context: android.content.Context, option: FontOption, sizeSp: Int) {
-    val typeface = remember(option, sizeSp) {
-        runCatching { FontCatalog.resolveTypeface(context, option) }.getOrDefault(Typeface.MONOSPACE)
+private fun FontPreview(context: android.content.Context, option: FontFamilyOption, sizeSp: Int) {
+    Column(modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)) {
+        listOf(
+            FontStyle.REGULAR to "Regular — the quick brown fox 0123",
+            FontStyle.BOLD to "Bold — the quick brown fox 0123",
+            FontStyle.ITALIC to "Italic — the quick brown fox 0123",
+            FontStyle.BOLD_ITALIC to "Bold Italic — the quick brown fox 0123"
+        ).forEach { (style, sample) ->
+            val typeface = remember(option, style) {
+                runCatching { FontCatalog.resolveTypeface(context, option, style) }.getOrDefault(Typeface.MONOSPACE)
+            }
+            Text(
+                text = sample,
+                fontFamily = FontFamily(typeface.asComposeTypeface()),
+                fontSize = sizeSp.sp
+            )
+        }
     }
-    Text(
-        text = "The quick brown fox jumps 0123456789 \uf015 \ue795",
-        fontFamily = FontFamily(typeface.asComposeTypeface()),
-        fontSize = sizeSp.sp,
-        modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-    )
 }
 
 private fun Typeface.asComposeTypeface(): androidx.compose.ui.text.font.Typeface =

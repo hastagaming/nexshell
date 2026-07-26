@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.nexshell.core.Workspace
 import com.nexshell.core.WorkspaceProperties
+import com.nexshell.font.FontCatalog
+import com.nexshell.font.FontFamilyOption
 import com.nexshell.service.NexShellForegroundService
 import com.nexshell.terminal.SessionManager
 import com.nexshell.terminal.TerminalSession
@@ -22,6 +24,15 @@ data class Pane(val session: TerminalSession)
 @Composable
 fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
     val context = LocalContext.current
+
+    // Resolved once here, from the workspace's saved .properties font name,
+    // then passed down to every pane's TerminalView so all panes in this
+    // workspace render with the same family.
+    val fontFamily = remember(properties.fontFamily) {
+        FontCatalog.allGrouped().values.flatten().find { it.displayName == properties.fontFamily }
+            ?: FontCatalog.nerdFonts.first { it.displayName == "JetBrainsMono Nerd Font" }
+    }
+
     var panes by remember {
         mutableStateOf(listOf(Pane(SessionManager.createSession(context, workspace, properties))))
     }
@@ -41,22 +52,40 @@ fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
         }
     ) { padding ->
         when {
-            panes.size == 1 -> TerminalView(session = panes[0].session, modifier = Modifier.fillMaxSize().padding(padding))
-            orientation == SplitOrientation.HORIZONTAL -> Row(modifier = Modifier.fillMaxSize().padding(padding)) {
-                panes.forEach { pane ->
-                    PaneContainer(pane, Modifier.weight(1f).fillMaxHeight()) {
-                        SessionManager.closeSession(pane.session.id)
-                        panes = panes.filterNot { it == pane }
-                        NexShellForegroundService.refresh(context.applicationContext)
+            panes.size == 1 -> {
+                TerminalView(
+                    session = panes[0].session,
+                    fontFamily = fontFamily,
+                    modifier = Modifier.fillMaxSize().padding(padding)
+                )
+            }
+            orientation == SplitOrientation.HORIZONTAL -> {
+                Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+                    panes.forEach { pane ->
+                        PaneContainer(
+                            pane = pane,
+                            fontFamily = fontFamily,
+                            modifier = Modifier.weight(1f).fillMaxHeight()
+                        ) {
+                            SessionManager.closeSession(pane.session.id)
+                            panes = panes.filterNot { it == pane }
+                            NexShellForegroundService.refresh(context.applicationContext)
+                        }
                     }
                 }
             }
-            else -> Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                panes.forEach { pane ->
-                    PaneContainer(pane, Modifier.weight(1f).fillMaxWidth()) {
-                        SessionManager.closeSession(pane.session.id)
-                        panes = panes.filterNot { it == pane }
-                        NexShellForegroundService.refresh(context.applicationContext)
+            else -> {
+                Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                    panes.forEach { pane ->
+                        PaneContainer(
+                            pane = pane,
+                            fontFamily = fontFamily,
+                            modifier = Modifier.weight(1f).fillMaxWidth()
+                        ) {
+                            SessionManager.closeSession(pane.session.id)
+                            panes = panes.filterNot { it == pane }
+                            NexShellForegroundService.refresh(context.applicationContext)
+                        }
                     }
                 }
             }
@@ -69,7 +98,12 @@ fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
 }
 
 @Composable
-private fun PaneContainer(pane: Pane, modifier: Modifier, onClose: () -> Unit) {
+private fun PaneContainer(
+    pane: Pane,
+    fontFamily: FontFamilyOption,
+    modifier: Modifier,
+    onClose: () -> Unit
+) {
     Column(modifier = modifier) {
         Row(modifier = Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(pane.session.label, style = MaterialTheme.typography.labelSmall)
@@ -77,6 +111,10 @@ private fun PaneContainer(pane: Pane, modifier: Modifier, onClose: () -> Unit) {
                 Icon(Icons.Filled.Close, contentDescription = "Close pane")
             }
         }
-        TerminalView(session = pane.session, modifier = Modifier.weight(1f))
+        TerminalView(
+            session = pane.session,
+            fontFamily = fontFamily,
+            modifier = Modifier.weight(1f)
+        )
     }
 }

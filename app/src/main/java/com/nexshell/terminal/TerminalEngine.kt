@@ -8,7 +8,8 @@ data class Cell(
     var char: Char = ' ',
     var fg: Color = Color(0xFFCDD6F4),
     var bg: Color = Color(0xFF1E1E2E),
-    var bold: Boolean = false
+    var bold: Boolean = false,
+    var italic: Boolean = false
 )
 
 /**
@@ -94,7 +95,7 @@ class TerminalEngine(
         if (cursorCol >= cols) {
             newLine()
         }
-        grid[cursorRow][cursorCol] = Cell(ch, curFg, curBg, curBold)
+        grid[cursorRow][cursorCol] = Cell(ch, curFg, curBg, curBold, curItalic)
         cursorCol++
     }
 
@@ -153,6 +154,8 @@ class TerminalEngine(
         Color(0xFF89B4FA), Color(0xFFCBA6F7), Color(0xFF94E2D5), Color(0xFFCDD6F4)
     )
 
+    private var curItalic = false
+
     private fun applySgr(params: List<Int>) {
         if (params.isEmpty()) { resetSgr(); return }
         var i = 0
@@ -160,7 +163,9 @@ class TerminalEngine(
             when (val p = params[i]) {
                 0 -> resetSgr()
                 1 -> curBold = true
+                3 -> curItalic = true
                 22 -> curBold = false
+                23 -> curItalic = false
                 in 30..37 -> curFg = theme.ansi[p - 30]
                 in 90..97 -> curFg = theme.ansi[p - 90]
                 in 40..47 -> curBg = theme.ansi[p - 40]
@@ -179,7 +184,7 @@ class TerminalEngine(
         }
     }
 
-    private fun resetSgr() { curFg = theme.foreground; curBg = theme.background; curBold = false }
+    private fun resetSgr() { curFg = theme.foreground; curBg = theme.background; curBold = false; curItalic = false }
 
     private fun xterm256(idx: Int): Color {
         if (idx < 8) return theme.ansi[idx]
