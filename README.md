@@ -4,6 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+[![](https://jitpack.io/v/termux/termux-app.svg)](https://jitpack.io/#termux/termux-app)
+
 **One Android App. Multiple Linux Systems.**
 
 NexShell is an Android terminal application that runs multiple fully

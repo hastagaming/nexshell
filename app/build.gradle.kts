@@ -4,12 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    }
-}
-
 android {
     namespace = "com.nexshell"
     compileSdk = 35
@@ -19,7 +13,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "0.1.0-phase2"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -35,23 +29,25 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
-
     buildTypes {
-        release {
-            isMinifyEnabled = false
-        }
+        release { isMinifyEnabled = false }
     }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+        // termux-view/terminal-emulator ship prebuilt .so per ABI —
+        // don't let packaging strip them.
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
@@ -71,9 +67,16 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("org.apache.commons:commons-compress:1.27.1")
+    implementation("org.tukaani:xz:1.10")
+    implementation("io.airlift:aircompressor:0.27")
+
+    // Real Termux modules — pure Java VT100/xterm emulator, native PTY
+    // JNI bridge, and the Android View + gesture layer, taken directly
+    // from the termux-app monorepo (published via JitPack).
+    implementation("com.github.termux.termux-app:terminal-emulator:v0.119.0-beta.3")
+    implementation("com.github.termux.termux-app:terminal-view:v0.119.0-beta.3")
+    implementation("com.github.termux.termux-app:termux-shared:v0.119.0-beta.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("org.apache.commons:commons-compress:1.27.1")
-    implementation("org.tukaani:xz:1.10")           // untuk .tar.zst / .tar.xz
-    implementation("io.airlift:aircompressor:0.27")  // untuk zstd frame (tar.zst)
 }

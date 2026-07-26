@@ -53,9 +53,9 @@ fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
     ) { padding ->
         when {
             panes.size == 1 -> {
-                TerminalView(
+                TerminalScreenWithKeys(
                     session = panes[0].session,
-                    fontFamily = fontFamily,
+                    properties = properties,
                     modifier = Modifier.fillMaxSize().padding(padding)
                 )
             }
@@ -111,9 +111,9 @@ private fun PaneContainer(
                 Icon(Icons.Filled.Close, contentDescription = "Close pane")
             }
         }
-        TerminalView(
+        TerminalScreenWithKeys(
             session = pane.session,
-            fontFamily = fontFamily,
+            properties = properties,
             modifier = Modifier.weight(1f)
         )
     }
