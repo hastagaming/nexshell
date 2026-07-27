@@ -11,27 +11,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.nexshell.core.Workspace
 import com.nexshell.core.WorkspaceProperties
-import com.nexshell.font.FontCatalog
-import com.nexshell.font.FontFamilyOption
 import com.nexshell.service.NexShellForegroundService
 import com.nexshell.terminal.SessionManager
-import com.nexshell.terminal.TerminalSession
+import com.nexshell.terminal.TerminalSessionHolder
 
 enum class SplitOrientation { NONE, HORIZONTAL, VERTICAL }
-data class Pane(val session: TerminalSession)
+data class Pane(val session: TerminalSessionHolder)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
     val context = LocalContext.current
-
-    // Resolved once here, from the workspace's saved .properties font name,
-    // then passed down to every pane's TerminalView so all panes in this
-    // workspace render with the same family.
-    val fontFamily = remember(properties.fontFamily) {
-        FontCatalog.allGrouped().values.flatten().find { it.displayName == properties.fontFamily }
-            ?: FontCatalog.nerdFonts.first { it.displayName == "JetBrainsMono Nerd Font" }
-    }
 
     var panes by remember {
         mutableStateOf(listOf(Pane(SessionManager.createSession(context, workspace, properties))))
@@ -62,11 +52,7 @@ fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
             orientation == SplitOrientation.HORIZONTAL -> {
                 Row(modifier = Modifier.fillMaxSize().padding(padding)) {
                     panes.forEach { pane ->
-                        PaneContainer(
-                            pane = pane,
-                            fontFamily = fontFamily,
-                            modifier = Modifier.weight(1f).fillMaxHeight()
-                        ) {
+                        PaneContainer(pane = pane, properties = properties, modifier = Modifier.weight(1f).fillMaxHeight()) {
                             SessionManager.closeSession(pane.session.id)
                             panes = panes.filterNot { it == pane }
                             NexShellForegroundService.refresh(context.applicationContext)
@@ -77,11 +63,7 @@ fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
             else -> {
                 Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                     panes.forEach { pane ->
-                        PaneContainer(
-                            pane = pane,
-                            fontFamily = fontFamily,
-                            modifier = Modifier.weight(1f).fillMaxWidth()
-                        ) {
+                        PaneContainer(pane = pane, properties = properties, modifier = Modifier.weight(1f).fillMaxWidth()) {
                             SessionManager.closeSession(pane.session.id)
                             panes = panes.filterNot { it == pane }
                             NexShellForegroundService.refresh(context.applicationContext)
@@ -93,14 +75,14 @@ fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
     }
 
     DisposableEffect(workspace.id) {
-        onDispose { /* sessions persist in SessionManager until explicitly closed by user or Exit action */ }
+        onDispose { }
     }
 }
 
 @Composable
 private fun PaneContainer(
     pane: Pane,
-    fontFamily: FontFamilyOption,
+    properties: WorkspaceProperties,
     modifier: Modifier,
     onClose: () -> Unit
 ) {

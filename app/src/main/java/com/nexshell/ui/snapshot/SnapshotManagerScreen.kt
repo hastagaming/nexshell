@@ -1,6 +1,8 @@
 package com.nexshell.ui.snapshot
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -10,11 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nexshell.core.Workspace
-import com.nexshell.snapshot.Snapshot
 import com.nexshell.snapshot.SnapshotManager
 import com.nexshell.snapshot.SnapshotProgress
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -31,35 +32,47 @@ fun SnapshotManagerScreen(workspace: Workspace) {
     fun refresh() { snapshots = manager.listSnapshots(workspace) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Snapshots — ${workspace.displayName}", style = MaterialTheme.typography.titleLarge)
             IconButton(onClick = { showCreateDialog = true }) { Icon(Icons.Filled.Add, contentDescription = "Create snapshot") }
         }
 
         busyMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
 
-        LazyColumnSnapshots(
-            snapshots = snapshots,
-            onRestore = { snap ->
-                scope.launch {
-                    busyMessage = "Restoring ${snap.name}…"
-                    withContext(Dispatchers.IO) {
-                        manager.restoreSnapshot(workspace, snap.name) { p ->
-                            when (p) {
-                                is SnapshotProgress.InProgress -> busyMessage = "Restoring… ${p.filesDone} files"
-                                is SnapshotProgress.Failed -> busyMessage = "Restore failed: ${p.reason}"
-                                SnapshotProgress.Done -> busyMessage = "Restored ✓"
-                            }
+        val fmt = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.US) }
+
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(snapshots, key = { it.name }) { snap ->
+                ListItem(
+                    headlineContent = { Text(snap.name) },
+                    supportingContent = { Text("${fmt.format(Date(snap.createdAt))} · ${snap.sizeBytes / 1024 / 1024} MB") },
+                    trailingContent = {
+                        Row {
+                            IconButton(onClick = {
+                                scope.launch {
+                                    busyMessage = "Restoring ${snap.name}…"
+                                    withContext(Dispatchers.IO) {
+                                        manager.restoreSnapshot(workspace, snap.name) { p ->
+                                            when (p) {
+                                                is SnapshotProgress.InProgress -> busyMessage = "Restoring… ${p.filesDone} files"
+                                                is SnapshotProgress.Failed -> busyMessage = "Restore failed: ${p.reason}"
+                                                SnapshotProgress.Done -> busyMessage = "Restored ✓"
+                                            }
+                                        }
+                                    }
+                                    refresh()
+                                }
+                            }) { Icon(Icons.Filled.Restore, contentDescription = "Restore") }
+
+                            IconButton(onClick = {
+                                manager.deleteSnapshot(workspace, snap.name)
+                                refresh()
+                            }) { Icon(Icons.Filled.Delete, contentDescription = "Delete") }
                         }
                     }
-                    refresh()
-                }
-            },
-            onDelete = { snap -> manager.deleteSnapshot(workspace, snap.name); refresh() }
-        )
+                )
+            }
+        }
     }
 
     if (showCreateDialog) {
@@ -90,28 +103,5 @@ fun SnapshotManagerScreen(workspace: Workspace) {
             },
             dismissButton = { TextButton(onClick = { showCreateDialog = false }) { Text("Cancel") } }
         )
-    }
-}
-
-@Composable
-private fun LazyColumnSnapshots(
-    snapshots: List<Snapshot>,
-    onRestore: (Snapshot) -> Unit,
-    onDelete: (Snapshot) -> Unit
-) {
-    val fmt = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.US) }
-    androidx.compose.foundation.lazy.LazyColumn {
-        androidx.compose.foundation.lazy.items(snapshots, key = { it.name }) { snap ->
-            ListItem(
-                headlineContent = { Text(snap.name) },
-                supportingContent = { Text("${fmt.format(Date(snap.createdAt))} · ${snap.sizeBytes / 1024 / 1024} MB") },
-                trailingContent = {
-                    Row {
-                        IconButton(onClick = { onRestore(snap) }) { Icon(Icons.Filled.Restore, contentDescription = "Restore") }
-                        IconButton(onClick = { onDelete(snap) }) { Icon(Icons.Filled.Delete, contentDescription = "Delete") }
-                    }
-                }
-            )
-        }
     }
 }
