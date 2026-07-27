@@ -78,13 +78,8 @@ dependencies {
     // Real Termux modules — pure Java VT100/xterm emulator, native PTY
     // JNI bridge, and the Android View + gesture layer, taken directly
     // from the termux-app monorepo (published via JitPack).
-    implementation("com.github.termux.termux-app:terminal-emulator:v0.119.0-beta.3") {
-        exclude(group = "com.google.guava", module = "listenablefuture")
-    }
-    implementation("com.github.termux.termux-app:terminal-view:v0.119.0-beta.3") {
-        exclude(group = "com.google.guava", module = "listenablefuture")
-    }
-    implementation("com.github.termux.termux-app:termux-shared:v0.119.0-beta.3") {
+    implementation(project(":terminal-emulator"))
+    implementation(project(":terminal-view")) {
         exclude(group = "com.google.guava", module = "listenablefuture")
     }
 

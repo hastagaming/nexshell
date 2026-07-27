@@ -10,8 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://jitpack.io") }
     }
 }
 rootProject.name = "NexShell"
 include(":app")
+include(":terminal-emulator")
+include(":terminal-view")
