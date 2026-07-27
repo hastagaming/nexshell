@@ -1,9 +1,9 @@
 apply plugin: 'com.android.library'
-apply plugin: 'maven-publish'
 
 android {
     namespace 'com.termux.terminal'
     compileSdk 35
+    ndkVersion '26.3.11579264'
 
     defaultConfig {
         minSdk 26
@@ -54,22 +54,4 @@ dependencies {
     testImplementation "junit:junit:4.13.2"
 }
 
-task sourceJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier "sources"
-}
 
-afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                from components.release
-                groupId = 'com.termux'
-                artifactId = 'terminal-emulator'
-                version = '0.118.0'
-                artifact(sourceJar)
-            }
-        }
-    }
-}
