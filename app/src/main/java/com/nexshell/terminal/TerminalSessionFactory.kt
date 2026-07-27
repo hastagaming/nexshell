@@ -7,6 +7,13 @@ import java.io.File
 
 object TerminalSessionFactory {
 
+    // Initial cell size estimate in pixels — used only to initialize the
+    // emulator/pty before TerminalView has been measured with real font
+    // metrics. TerminalView corrects this via updateSize() once it knows
+    // actual glyph width/height for the chosen font and size.
+    private const val INITIAL_CELL_WIDTH_PX = 24
+    private const val INITIAL_CELL_HEIGHT_PX = 48
+
     fun create(
         workspace: Workspace,
         properties: WorkspaceProperties,
@@ -21,13 +28,7 @@ object TerminalSessionFactory {
         val (executablePath, args, cwd) = if (hasRootfs) {
             val prootBinary = "$nativeLibDir/libnexshell_proot.so"
             val rootfs = workspace.filesDir.absolutePath
-            val bindArgs = mutableListOf(
-                "-r", rootfs,
-                "-b", "/dev",
-                "-b", "/proc",
-                "-b", "/sys",
-                "-0"
-            )
+            val bindArgs = mutableListOf("-r", rootfs, "-b", "/dev", "-b", "/proc", "-b", "/sys", "-0")
             val storageMarker = File(workspace.rootDir, ".storage-setup-done")
             if (storageMarker.exists()) {
                 bindArgs += listOf("-b", "/storage/emulated/0:/root/storage/shared")
@@ -35,9 +36,6 @@ object TerminalSessionFactory {
             val innerCmd = properties.startupCommand.ifBlank { "/bin/sh -i" }
             Triple(prootBinary, (bindArgs + listOf("/bin/sh", "-c", innerCmd)).toTypedArray(), home)
         } else {
-            // No rootfs installed for this workspace yet — fall back to
-            // Android's own shell so the session is still usable
-            // (e.g. to run nexshell-setup) until RootFS Manager installs one.
             val args = if (properties.startupCommand.isNotBlank())
                 arrayOf("-c", properties.startupCommand) else arrayOf("-i")
             Triple("/system/bin/sh", args, home)
@@ -51,18 +49,20 @@ object TerminalSessionFactory {
             "LD_LIBRARY_PATH=$nativeLibDir"
         )
 
-        // TerminalSession.create() is Termux's real constructor: it forks
-        // the process, attaches a genuine PTY via their JNI bridge, and
-        // wires stdin/stdout to the TerminalEmulator screen buffer.
-        return TerminalSession(
+        val session = TerminalSession(
             executablePath,
             cwd,
             args,
             env,
-            TerminalSession.getDefaultTermType(), // "xterm-256color" default from Termux
+            properties.terminalTranscriptRows,
             sessionClient
-        ).apply {
-            updateSize(cols, rows)
-        }
+        )
+
+        // First call after construction — mEmulator is still null at this
+        // point, so this path calls initializeEmulator(...) internally,
+        // which is what actually creates the pty and starts the process.
+        session.updateSize(cols, rows, INITIAL_CELL_WIDTH_PX, INITIAL_CELL_HEIGHT_PX)
+
+        return session
     }
 }

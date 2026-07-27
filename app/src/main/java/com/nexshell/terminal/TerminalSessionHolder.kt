@@ -31,7 +31,8 @@ class TerminalSessionHolder(
 
     fun sendInput(text: String) = termuxSession.write(text)
 
-    fun resize(rows: Int, cols: Int) = termuxSession.updateSize(cols, rows)
+    fun resize(columns: Int, rows: Int, cellWidthPx: Int, cellHeightPx: Int) =
+        termuxSession.updateSize(columns, rows, cellWidthPx, cellHeightPx)
 
     fun destroy() {
         termuxSession.finishIfRunning()

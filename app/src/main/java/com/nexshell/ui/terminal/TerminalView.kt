@@ -7,6 +7,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.nexshell.extrakeys.ExtraKeysState
 import com.nexshell.terminal.TerminalSessionHolder
 import com.termux.terminal.TerminalSession
+import androidx.core.view.doOnLayout
 import com.termux.view.TerminalView as TermuxTerminalView
 import com.termux.view.TerminalViewClient
 
@@ -23,6 +24,17 @@ fun TerminalView(
                 setTextSize(38)
                 setTerminalViewClient(buildViewClient(this, extraKeysState))
                 attachSession(session.termuxSession)
+                doOnLayout {
+                    val paint = android.graphics.Paint().apply {
+                        typeface = android.graphics.Typeface.MONOSPACE
+                        textSize = 38f
+                    }
+                    val cellWidth = paint.measureText("X").toInt().coerceAtLeast(1)
+                    val cellHeight = paint.fontSpacing.toInt().coerceAtLeast(1)
+                    val cols = (width / cellWidth).coerceAtLeast(1)
+                    val rows = (height / cellHeight).coerceAtLeast(1)
+                    session.resize(cols, rows, cellWidth, cellHeight)
+                }
                 requestFocus()
             }
         },
