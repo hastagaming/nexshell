@@ -34,18 +34,6 @@ android {
         release { isMinifyEnabled = false }
     }
 
-    configurations.all {
-        resolutionStrategy {
-            // Force a modern Guava that bundles ListenableFuture itself —
-            // older Guava split it into a separate stub artifact, which is
-            // what caused the duplicate-class conflict we excluded earlier.
-            // Forcing this version keeps the real class available at
-            // runtime while still avoiding the duplicate.
-            force("com.google.guava:guava:32.1.3-android")
-        }
-        exclude(group = "com.google.guava", module = "listenablefuture")
-    }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
