@@ -79,6 +79,7 @@ dependencies {
     implementation(project(":terminal-view")) {
         exclude(group = "com.google.guava", module = "listenablefuture")
     }
+    implementation("com.google.guava:guava:32.1.3-android")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
