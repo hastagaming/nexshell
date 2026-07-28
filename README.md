@@ -1,10 +1,10 @@
 # NexShell
 
-[![Build NexShell](https://github.com/hastagaming/nexshell/actions/workflows/build.yml/badge.svg)](https://github.com/hastagaming/nexshell/actions/workflows/build.yml)
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-[![](https://jitpack.io/v/termux/termux-app.svg)](https://jitpack.io/#termux/termux-app)
+<div align="center">
+  [![Build NexShell](https://github.com/hastagaming/nexshell/actions/workflows/build.yml/badge.svg)](https://github.com/hastagaming/nexshell/actions/workflows/build.yml)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+  [![](https://jitpack.io/v/termux/termux-app.svg)](https://jitpack.io/#termux/termux-app)
+</div>
 
 **One Android App. Multiple Linux Systems.**
 

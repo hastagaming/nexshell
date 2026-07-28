@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
                                 DrawerDestination.SNAPSHOTS -> Screen.Snapshots(ws)
                                 DrawerDestination.FONT -> Screen.FontSettings(ws)
                                 DrawerDestination.ROOTFS -> Screen.RootFsImport(ws)
+                                else -> screen
                             }
                         }
                     ) { openDrawer ->

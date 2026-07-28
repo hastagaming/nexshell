@@ -1,6 +1,7 @@
 package com.nexshell.terminal
 
 import com.nexshell.core.Workspace
+import com.nexshell.core.Distro
 import com.nexshell.core.WorkspaceProperties
 import com.termux.terminal.TerminalSession
 import java.io.File
