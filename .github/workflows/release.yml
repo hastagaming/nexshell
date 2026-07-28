@@ -69,7 +69,8 @@ jobs:
             nexshell-aligned.apk
 
       - name: Verify signature
-        run: "$BUILD_TOOLS_DIR/apksigner" verify --verbose nexshell-signed.apk
+        run: |
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose nexshell-signed.apk
 
       - name: Clean up keystore file
         if: always()
