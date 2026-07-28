@@ -13,8 +13,8 @@ android {
         applicationId = "com.nexshell"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0-phase2"
+        versionCode = (project.findProperty("versionCodeOverride") as String?)?.toIntOrNull() ?: 1
+        versionName = project.findProperty("versionNameOverride") as String? ?: "0.1.0-debug"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")

@@ -8,16 +8,16 @@ on:
   workflow_dispatch:
     inputs:
       build_run_id:
-        description: 'Run ID dari workflow Build NexShell yang APK-nya mau di-sign'
-        required: true
+        description: 'Run ID dari workflow Build NexShell yang APK-nya mau di-sign (kosongkan jika dipicu otomatis)'
+        required: false
         type: string
       tag_name:
-        description: 'Tag rilis, contoh: v0.1.0'
-        required: true
+        description: 'Tag rilis manual, contoh: v1.2.0 (kosongkan untuk auto-generate)'
+        required: false
         type: string
       release_name:
-        description: 'Nama rilis'
-        required: true
+        description: 'Nama rilis manual (kosongkan untuk auto-generate)'
+        required: false
         type: string
 
 jobs:
@@ -28,12 +28,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download unsigned release APK from previous build run
+      - name: Checkout (for version reference only)
+        uses: actions/checkout@v4
+
+      - name: Resolve source run ID
+        id: resolve_run
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_id=${{ inputs.build_run_id }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve tag and release name
+        id: resolve_tag
+        run: |
+          if [ -n "${{ inputs.tag_name }}" ]; then
+            TAG="${{ inputs.tag_name }}"
+            NAME="${{ inputs.release_name }}"
+          else
+            TAG="v0.1.${{ github.run_number }}"
+            NAME="NexShell $TAG"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "release_name=$NAME" >> "$GITHUB_OUTPUT"
+          # Strip leading "v" for use as Gradle versionName (e.g. v0.1.42 -> 0.1.42)
+          echo "version_name=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download unsigned release APK from build run
         uses: actions/download-artifact@v4
         with:
           name: nexshell-release-unsigned-apk
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ inputs.build_run_id }}
+          run-id: ${{ steps.resolve_run.outputs.run_id }}
           path: ./unsigned
 
       - name: Set up JDK 17
@@ -65,12 +92,19 @@ jobs:
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
             --ks-key-alias ${{ secrets.KEY_ALIAS }} \
             --key-pass pass:${{ secrets.KEY_PASSWORD }} \
-            --out nexshell-signed.apk \
+            --out nexshell-signed-unnamed.apk \
             nexshell-aligned.apk
 
       - name: Verify signature
         run: |
-          "$BUILD_TOOLS_DIR/apksigner" verify --verbose nexshell-signed.apk
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose nexshell-signed-unnamed.apk
+
+      - name: Rename APK to include version tag
+        id: rename_apk
+        run: |
+          FINAL_NAME="nexshell-${{ steps.resolve_tag.outputs.tag }}.apk"
+          mv nexshell-signed-unnamed.apk "$FINAL_NAME"
+          echo "apk_path=$FINAL_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Clean up keystore file
         if: always()
@@ -79,9 +113,9 @@ jobs:
       - name: Create GitHub Release and upload signed APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag_name }}
-          name: ${{ inputs.release_name }}
-          files: nexshell-signed.apk
+          tag_name: ${{ steps.resolve_tag.outputs.tag }}
+          name: ${{ steps.resolve_tag.outputs.release_name }}
+          files: ${{ steps.rename_apk.outputs.apk_path }}
           draft: false
           prerelease: false
         env:

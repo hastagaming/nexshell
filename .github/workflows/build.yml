@@ -53,7 +53,7 @@ jobs:
           retention-days: 30
 
       - name: Build release APK (unsigned)
-        run: ./gradlew assembleRelease --stacktrace
+        run: ./gradlew assembleRelease -PversionNameOverride=0.1.${{ github.run_number }} -PversionCodeOverride=${{ github.run_number }} --stacktrace
 
       - name: Upload unsigned release APK artifact
         uses: actions/upload-artifact@v4
