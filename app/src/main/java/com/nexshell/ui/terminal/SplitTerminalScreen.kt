@@ -20,7 +20,7 @@ data class Pane(val session: TerminalSessionHolder)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
+fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties, onOpenDrawer: () -> Unit) {
     val context = LocalContext.current
 
     var panes by remember {
@@ -32,6 +32,11 @@ fun SplitTerminalScreen(workspace: Workspace, properties: WorkspaceProperties) {
         topBar = {
             TopAppBar(
                 title = { Text(workspace.displayName) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                },
                 actions = {
                     IconButton(onClick = {
                         panes = panes + Pane(SessionManager.createSession(context, workspace, properties))

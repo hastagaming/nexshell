@@ -44,6 +44,7 @@ class RootFsInstaller {
             }
 
             extractTarball(archiveFile, workspace.filesDir, onProgress)
+            injectPromptConfig(workspace)
 
             archiveFile.delete()
             onProgress(InstallProgress.Done)
@@ -55,9 +56,58 @@ class RootFsInstaller {
     fun importCustomRootFs(workspace: Workspace, archiveFile: File, onProgress: (InstallProgress) -> Unit) {
         try {
             extractTarball(archiveFile, workspace.filesDir, onProgress)
+            injectPromptConfig(workspace)
             onProgress(InstallProgress.Done)
         } catch (e: Exception) {
             onProgress(InstallProgress.Failed(e.message ?: e.toString()))
+        }
+    }
+
+    /**
+     * Appends an explicit PS1 export to the rootfs's shell startup files so
+     * the NexShell prompt survives even when the distro's own .bashrc
+     * (Ubuntu/Debian ship one by default) would otherwise override the PS1
+     * inherited from the process environment.
+     */
+    private fun injectPromptConfig(workspace: Workspace) {
+        val promptName = if (workspace.distro == com.nexshell.core.Distro.CUSTOM) {
+            workspace.displayName.lowercase().replace(" ", "-")
+        } else {
+            workspace.distro.name.lowercase()
+        }
+        val exportLine = "export PS1='$promptName@nexshell:~\$ '"
+
+        val homeDir = workspace.homeDir
+        homeDir.mkdirs()
+
+        listOf(".bashrc", ".profile").forEach { fileName ->
+            val file = File(homeDir, fileName)
+            val existing = if (file.exists()) file.readText() else ""
+
+            // Don't duplicate the line if this rootfs was already installed
+            // once before (e.g. re-import after a failed extraction).
+            if (!existing.contains("nexshell:~\\\$")) {
+                file.appendText(
+                    buildString {
+                        if (existing.isNotEmpty() && !existing.endsWith("\n")) appendLine()
+                        appendLine()
+                        appendLine("# Added by NexShell — keep prompt consistent regardless of distro defaults")
+                        appendLine(exportLine)
+                    }
+                )
+            }
+        }
+
+        // ash/dash (Alpine's default shell) reads .profile, not .bashrc —
+        // already covered above, but Alpine's busybox ash also needs the
+        // ENV variable set for non-login interactive shells to source it.
+        if (workspace.distro == com.nexshell.core.Distro.ALPINE) {
+            val profileFile = File(homeDir, ".profile")
+            val ashrcLine = "export ENV=\$HOME/.profile"
+            val currentProfile = if (profileFile.exists()) profileFile.readText() else ""
+            if (!currentProfile.contains("export ENV=")) {
+                profileFile.appendText("\n$ashrcLine\n")
+            }
         }
     }
 

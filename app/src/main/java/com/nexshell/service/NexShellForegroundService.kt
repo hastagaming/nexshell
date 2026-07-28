@@ -125,16 +125,14 @@ class NexShellForegroundService : Service() {
     }
 
     private fun handleExit() {
-        // Stop every live session's real process, every registered service's
-        // real process, release the wakelock if held, then tear the
-        // foreground service down. Order matters: sessions/services first so
-        // no orphaned child processes are left behind once the service dies.
         SessionManager.sessions.value.forEach { session ->
             SessionManager.closeSession(session.id)
         }
         releaseWakelock()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+
+        android.os.Process.killProcess(android.os.Process.myPid())
     }
 
     private fun acquireWakelock() {

@@ -39,21 +39,13 @@ fun ExtraKeysRow(
                                 else MaterialTheme.colorScheme.surfaceVariant,
                         modifier = Modifier
                             .weight(1f)
-                            .padding(1.dp)
-                            .clickable {
-                                if (isModifier) {
-                                    state.toggle(label)
-                                } else {
-                                    val bytes = ExtraKeyMacros.resolve(label, state.ctrlActive, state.altActive)
-                                    if (bytes != null) session.sendInput(bytes)
-                                    state.releaseNonSticky()
-                                }
-                            }
+                            .padding(0.5.dp)
+                            .clickable { /* unchanged */ }
                     ) {
-                        Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
                             Text(
                                 text = label,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 color = if (isActive) MaterialTheme.colorScheme.onPrimary
                                         else MaterialTheme.colorScheme.onSurfaceVariant
                             )

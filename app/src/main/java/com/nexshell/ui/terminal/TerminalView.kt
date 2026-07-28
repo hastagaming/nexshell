@@ -17,25 +17,24 @@ fun TerminalView(
     extraKeysState: ExtraKeysState,
     modifier: Modifier = Modifier
 ) {
+    var currentTextSizePx by remember { mutableIntStateOf(38) }
     AndroidView(
         modifier = modifier.fillMaxSize(),
         factory = { context ->
             TermuxTerminalView(context, null).apply {
-                setTextSize(38)
-                setTerminalViewClient(buildViewClient(this, extraKeysState))
+                isFocusable = true
+                isFocusableInTouchMode = true
+                setTextSize(currentTextSizePx)
+                setTerminalViewClient(buildViewClient(this, extraKeysState) { newSizePx ->
+                    currentTextSizePx = newSizePx
+                    setTextSize(newSizePx)
+                })
                 attachSession(session.termuxSession)
-                doOnLayout {
-                    val paint = android.graphics.Paint().apply {
-                        typeface = android.graphics.Typeface.MONOSPACE
-                        textSize = 38f
-                    }
-                    val cellWidth = paint.measureText("X").toInt().coerceAtLeast(1)
-                    val cellHeight = paint.fontSpacing.toInt().coerceAtLeast(1)
-                    val cols = (width / cellWidth).coerceAtLeast(1)
-                    val rows = (height / cellHeight).coerceAtLeast(1)
-                    session.resize(cols, rows, cellWidth, cellHeight)
-                }
                 requestFocus()
+                post {
+                    val imm = context.getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+                    imm?.showSoftInput(this, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                }
             }
         },
         update = { view ->
@@ -46,9 +45,22 @@ fun TerminalView(
     )
 }
 
-private fun buildViewClient(view: TermuxTerminalView, extraKeysState: ExtraKeysState): TerminalViewClient {
+private fun buildViewClient(
+    view: TermuxTerminalView,
+    extraKeysState: ExtraKeysState,
+    onFontSizeChanged: (Int) -> Unit
+): TerminalViewClient {
+    var lastSize = 38
     return object : TerminalViewClient {
-        override fun onScale(scale: Float): Float = scale.coerceIn(0.5f, 2.5f)
+        override fun onScale(scale: Float): Float {
+            if (scale < 0.9f || scale > 1.1f) {
+                val increasing = scale > 1.0f
+                lastSize = (lastSize + if (increasing) 2 else -2).coerceIn(18, 72)
+                onFontSizeChanged(lastSize)
+                return 1.0f
+            }
+            return scale
+        }
 
         override fun onSingleTapUp(e: android.view.MotionEvent?) {
             view.requestFocus()

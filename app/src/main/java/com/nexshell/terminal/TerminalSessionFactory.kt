@@ -41,12 +41,19 @@ object TerminalSessionFactory {
             Triple("/system/bin/sh", args, home)
         }
 
+        val promptName = if (workspace.distro == Distro.CUSTOM)
+            workspace.displayName.lowercase().replace(" ", "-")
+        else workspace.distro.name.lowercase()
+
+        val ps1 = "$promptName@nexshell:~\\$ "
+
         val env = arrayOf(
             "HOME=$home",
             "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
             "TERM=xterm-256color",
             "WORKSPACE=${workspace.id}",
-            "LD_LIBRARY_PATH=$nativeLibDir"
+            "LD_LIBRARY_PATH=$nativeLibDir",
+            "PS1=$ps1"
         )
 
         val session = TerminalSession(
