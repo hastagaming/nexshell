@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.nexshell.core.Workspace
 import com.nexshell.rootfs.InstallProgress
 import com.nexshell.rootfs.RootFsCatalog
+import com.nexshell.rootfs.ProotInstaller
 import com.nexshell.rootfs.RootFsManager
 import com.nexshell.rootfs.RootFsSource
 import kotlinx.coroutines.Dispatchers
@@ -89,7 +90,19 @@ fun RootFsInstallerScreen(workspace: Workspace, onInstalled: () -> Unit) {
                         when (val sel = selected) {
                             is RootFsSource -> manager.install(workspace, sel) { p ->
                                 progress = p
-                                if (p is InstallProgress.Done) scope.launch { onInstalled() }
+                                if (p is InstallProgress.Done) {
+                                    scope.launch {
+                                        withContext(Dispatchers.IO) {
+                                            val nativeLibDir = context.applicationInfo.nativeLibraryDir
+                                            if (!com.nexshell.rootfs.ProotInstaller.isInstalled(context.filesDir)) {
+                                                runCatching {
+                                                    com.nexshell.rootfs.ProotInstaller.install(context.filesDir) { }
+                                                }
+                                            }
+                                        }
+                                        onInstalled()
+                                    }
+                                }
                             }
                             CustomRootFsMarker -> {
                                 val uri = customUri ?: return@withContext

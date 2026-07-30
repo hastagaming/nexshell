@@ -19,6 +19,7 @@ object TerminalSessionFactory {
         workspace: Workspace,
         properties: WorkspaceProperties,
         nativeLibDir: String,
+        filesDir: File,
         sessionClient: NexShellSessionClient,
         rows: Int,
         cols: Int
@@ -27,7 +28,7 @@ object TerminalSessionFactory {
         val home = workspace.homeDir.absolutePath
 
         val (executablePath, args, cwd) = if (hasRootfs) {
-            val prootBinary = "$nativeLibDir/libnexshell_proot.so"
+            val prootBinary = com.nexshell.rootfs.ProotInstaller.installedPath(filesDir)
             val rootfs = workspace.filesDir.absolutePath
             val bindArgs = mutableListOf("-r", rootfs, "-b", "/dev", "-b", "/proc", "-b", "/sys", "-0")
             val storageMarker = File(workspace.rootDir, ".storage-setup-done")

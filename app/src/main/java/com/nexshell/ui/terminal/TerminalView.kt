@@ -19,9 +19,11 @@ import com.termux.view.TerminalViewClient
 fun TerminalView(
     session: TerminalSessionHolder,
     extraKeysState: ExtraKeysState,
+    onViewReady: (TermuxTerminalView) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var currentTextSizePx by remember { mutableIntStateOf(38) }
+
     AndroidView(
         modifier = modifier.fillMaxSize(),
         factory = { context ->
@@ -34,16 +36,19 @@ fun TerminalView(
                     setTextSize(newSizePx)
                 })
                 attachSession(session.termuxSession)
+                session.client.attachedView = this
                 requestFocus()
                 post {
                     val imm = context.getSystemService(android.view.inputmethod.InputMethodManager::class.java)
                     imm?.showSoftInput(this, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
                 }
+                onViewReady(this)
             }
         },
         update = { view ->
             if (view.currentSession != session.termuxSession) {
                 view.attachSession(session.termuxSession)
+                session.client.attachedView = view
             }
         }
     )

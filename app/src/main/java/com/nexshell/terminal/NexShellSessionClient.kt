@@ -5,25 +5,31 @@ import android.media.ToneGenerator
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
+import com.termux.view.TerminalView
 
-/**
- * Bridges a real com.termux.terminal.TerminalSession (genuine PTY +
- * VT100/xterm emulation) to NexShell's own UI state. This is the actual
- * Termux terminal engine — not a reimplementation.
- */
 class NexShellSessionClient(private val onScreenUpdate: () -> Unit) : TerminalSessionClient {
+
+    // Set once the real TerminalView attaches this session — required
+    // because TerminalView does not auto-refresh; the client must call
+    // onScreenUpdated() explicitly, same as upstream Termux does.
+    var attachedView: TerminalView? = null
 
     private var toneGenerator: ToneGenerator? = null
 
-    override fun onTextChanged(changedSession: TerminalSession) = onScreenUpdate()
+    override fun onTextChanged(changedSession: TerminalSession) {
+        attachedView?.onScreenUpdated()
+        onScreenUpdate()
+    }
 
-    override fun onTitleChanged(changedSession: TerminalSession) { /* workspace label stays user-defined */ }
+    override fun onTitleChanged(changedSession: TerminalSession) { }
 
-    override fun onSessionFinished(finishedSession: TerminalSession) = onScreenUpdate()
+    override fun onSessionFinished(finishedSession: TerminalSession) {
+        attachedView?.onScreenUpdated()
+        onScreenUpdate()
+    }
 
-    override fun onCopyTextToClipboard(session: TerminalSession, text: String?) { /* wired to Android clipboard in TerminalView */ }
-
-    override fun onPasteTextFromClipboard(session: TerminalSession?) { /* wired to Android clipboard in TerminalView */ }
+    override fun onCopyTextToClipboard(session: TerminalSession, text: String?) { }
+    override fun onPasteTextFromClipboard(session: TerminalSession?) { }
 
     override fun onBell(session: TerminalSession) {
         runCatching {
@@ -32,12 +38,16 @@ class NexShellSessionClient(private val onScreenUpdate: () -> Unit) : TerminalSe
         }
     }
 
-    override fun onColorsChanged(changedSession: TerminalSession) = onScreenUpdate()
+    override fun onColorsChanged(changedSession: TerminalSession) {
+        attachedView?.onScreenUpdated()
+        onScreenUpdate()
+    }
 
-    override fun onTerminalCursorStateChange(state: Boolean) = onScreenUpdate()
+    override fun onTerminalCursorStateChange(state: Boolean) {
+        attachedView?.onScreenUpdated()
+    }
 
-    override fun setTerminalShellPid(session: TerminalSession, pid: Int) { /* pid tracked by ServiceManager separately if registered as a service */ }
-
+    override fun setTerminalShellPid(session: TerminalSession, pid: Int) { }
     override fun getTerminalCursorStyle(): Int = TerminalEmulator.DEFAULT_TERMINAL_CURSOR_STYLE
 
     override fun logError(tag: String?, message: String?) { android.util.Log.e(tag ?: "NexShell", message ?: "") }

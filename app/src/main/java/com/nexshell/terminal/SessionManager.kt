@@ -28,6 +28,7 @@ object SessionManager {
             workspace = workspace,
             label = label,
             nativeLibDir = context.applicationInfo.nativeLibraryDir,
+            filesDir = context.filesDir,
             properties = properties,
             rows = rows,
             cols = cols

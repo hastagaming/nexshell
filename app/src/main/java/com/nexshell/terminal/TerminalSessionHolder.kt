@@ -10,6 +10,7 @@ class TerminalSessionHolder(
     val workspace: Workspace,
     val label: String,
     nativeLibDir: String,
+    filesDir: File,
     properties: WorkspaceProperties,
     rows: Int = 24,
     cols: Int = 80
@@ -22,6 +23,7 @@ class TerminalSessionHolder(
         workspace = workspace,
         properties = properties,
         nativeLibDir = nativeLibDir,
+        filesDir = filesDir,
         sessionClient = client,
         rows = rows,
         cols = cols
