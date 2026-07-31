@@ -7,6 +7,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 
 import com.google.android.material.button.MaterialButton;
+import com.termux.shared.termux.extrakeys.IExtraKeysView;
 import com.termux.shared.termux.extrakeys.ExtraKeyButton;
 import com.termux.shared.termux.extrakeys.SpecialButton;
 import com.termux.terminal.TerminalSession;
