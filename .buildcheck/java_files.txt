@@ -1,0 +1,7 @@
+app/src/main/java/com/termux/shared/termux/extrakeys/ExtraKeyButton.java
+app/src/main/java/com/termux/shared/termux/extrakeys/ExtraKeysConstants.java
+app/src/main/java/com/termux/shared/termux/extrakeys/ExtraKeysInfo.java
+app/src/main/java/com/termux/shared/termux/extrakeys/SpecialButton.java
+app/src/main/java/com/termux/shared/termux/extrakeys/SpecialButtonState.java
+app/src/main/java/com/termux/shared/termux/extrakeys/IExtraKeysView.java
+app/src/main/java/com/termux/shared/termux/terminal/io/TerminalExtraKeys.java
